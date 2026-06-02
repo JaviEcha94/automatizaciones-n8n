@@ -1,0 +1,959 @@
+{
+  "name": "Ejercicio 5 — Flujo Producción + Audit Trail",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "53b1894a-ae38-4dc0-88d7-a01d4fec6127",
+        "options": {}
+      },
+      "id": "870cd97f-5a82-45cc-9828-0da3f10ae6ad",
+      "name": "📥 Webhook — Recibir datos",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1696,
+        16
+      ],
+      "webhookId": "53b1894a-ae38-4dc0-88d7-a01d4fec6127"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1HZZSNyaDp9-uvXSg8dZwgjioS8taON_8BSsuOCk5H2E",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "N8N — Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombre": "={{ $json.nombre }}",
+            "email": "={{ $json.email }}",
+            "telefono": "={{ $json.telefono }}",
+            "mensaje": "={{ $json.mensaje }}",
+            "fecha": "={{ $json.fecha }}",
+            "hora": "={{ $json.hora }}",
+            "fuente": "={{ $json.fuente }}",
+            "prioridad": "={{ $json.prioridad }}",
+            "razon": "={{ $json.razon }}",
+            "accion": "={{ $json.accion }}",
+            "idempotency_key": "={{ $json.idempotency_key }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "telefono",
+              "displayName": "telefono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mensaje",
+              "displayName": "mensaje",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hora",
+              "displayName": "hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fuente",
+              "displayName": "fuente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "prioridad",
+              "displayName": "prioridad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "razon",
+              "displayName": "razon",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "accion",
+              "displayName": "accion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "idempotency_key",
+              "displayName": "idempotency_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "abea7776-1524-4d2c-9582-9dbf86e6e5c4",
+      "name": "📊 Google Sheets — Guardar fila",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        528,
+        32
+      ],
+      "credentials": {
+        "googleApi": {
+          "id": "CSDAcb2u9XMcJD3t",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "🤖 FLUJO COMPLETO — LEAD INTELLIGENCE + AUDIT TRAIL\nEjercicio 5 — Módulo N8N | Autor: Javier Echalecu | Junio 2026\n\nDESCRIPCIÓN:\nRecibe leads por webhook, los analiza con IA y notifica\nal ejecutivo con prioridad y acción. Registra cada\noperación en un audit trail para trazabilidad completa.\n\nCASO DE USO:\nCada lead entrante es evaluado automáticamente.\nSi el mismo mensaje llega dos veces → detectado y logueado.\nAntes de llegar a la IA → datos PII enmascarados.\nSi la IA clasifica → ejecutivo recibe email con prioridad.\nSi algo falla → el error queda registrado, el flujo no se rompe.\nTodo queda en el audit log sin excepción.\n\nARQUITECTURA:\nWebhook → Limpiar (PII masking) → Lookup (deduplicación)\n  → [DUPLICADO] → Audit Log\n  → [NUEVO] → Gemini (clasificación IA)\n    → [ERROR] → Audit Log\n    → [OK] → Parsear IA → Guardar en Sheets → Send Email\n      → [ERROR] → Audit Log\n      → [OK] → Audit Log\n\nNODOS: 10 nodos activos\nINTEGRACIONES: Webhook · Google Sheets · Gemini 2.5 Flash · Gmail SMTP\nPRIVACIDAD: PII masking antes de la IA. Ley 25.326.\nENTREGABLE: Flujo JSON exportado en GitHub + audit trail funcional",
+        "height": 544,
+        "width": 592
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1968,
+        -1056
+      ],
+      "id": "ed978983-2704-44b3-879f-b9b180bc386f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "📥 RECIBIR DATOS\n\nEscucha requests POST entrantes.\n\nAcepta cualquier sistema que mande \ndatos en formato JSON con los campos:\nnombre, email, telefono, mensaje.\n\nTest URL:  /webhook-test/lead-nuevo\nProd URL:  /webhook/lead-nuevo",
+        "height": 192,
+        "width": 272
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1776,
+        192
+      ],
+      "id": "ce01d024-1bc1-4e3e-b9a2-3c1857d3c5bf",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "✏️ LIMPIAR, FORMATEAR, IDEMPOTENCIA Y PII MASKING\n\nTransforma los datos crudos del webhook antes de procesarlos.\n\nHace 4 cosas:\n1. Extrae los campos del body del POST\n2. Agrega fecha y hora en formato AR (timezone: America/Argentina/BA)\n3. Genera idempotency_key = email + hash(mensaje)\n   → Mismo email + mismo mensaje = duplicado\n   → Mismo email + mensaje distinto = lead nuevo\n4. Separa los datos en dos objetos:\n   → datosCompletos: datos reales (Sheets + email al ejecutivo)\n   → datosSanitizados + textoParaIA: versión sin PII\n     (único objeto que llega a la IA)\n\nPII enmascarado: email, teléfono, DNI, tarjeta, CBU/CVU\nMarco legal aplicado: Ley 25.326 de Protección de Datos Personales",
+        "height": 416,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        -432
+      ],
+      "id": "372e90bb-c351-4f05-a241-4567277e7b90",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "📊 GUARDAR EN PLANILLA\n\nEscribe una fila nueva en Google Sheets\ncon los datos ya limpios del nodo Code.\n\nPlanilla: N8N — Leads\nHoja: Sheet1\nOperación: Append Row (agrega al final)\nCredencial: Google Service Account",
+        "width": 304
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -192
+      ],
+      "id": "1a1d27e6-4088-4b9b-ba49-da719bcf1943",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "Sos un clasificador de leads para una fintech argentina.\n   Analizá el lead y respondé UNICAMENTE con este JSON, sin texto adicional ni markdown:\n   {\n     \"prioridad\": \"Alta | Media | Baja\",\n     \"razon\": \"una oración explicando la prioridad\",\n     \"accion\": \"próximo paso concreto recomendado para el ejecutivo\"\n   }\n   Criterios de prioridad:\n   - Alta: menciona monto específico, producto concreto o urgencia real\n   - Media: interés claro pero sin especificidad suficiente\n   - Baja: mensaje vago, incompleto o sin intención clara de compra",
+              "role": "model"
+            },
+            {
+              "content": "=={{ $('Limpiar').first().json.textoParaIA }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        176
+      ],
+      "id": "651d84a7-6540-42b9-8ac7-952a01afa88d",
+      "name": "Message a model",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1H8LP4NCYQXiguaw",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "fromEmail": "javier.n.echalecu@gmail.com",
+        "toEmail": "javier.n.echalecu@gmail.com",
+        "subject": "=Lead {{ $json.prioridad }}: {{ $json.nombre }}",
+        "html": "=<h3>Nuevo lead clasificado por IA</h3>\n<p><b>Nombre:</b> {{ $json.nombre }}</p>\n<p><b>Email:</b> {{ $json.email }}</p>\n<p><b>Teléfono:</b> {{ $json.telefono }}</p>\n<p><b>Prioridad:</b> {{ $json.prioridad }}</p>\n<p><b>Análisis:</b> {{ $json.razon }}</p>\n<p><b>Acción recomendada:</b> {{ $json.accion }}</p>\n<p><b>Mensaje original:</b> {{ $json.mensaje }}</p>\n<p><small>Procesado automáticamente por N8N + IA — {{ $json.fecha }} {{ $json.hora }}</small></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        976,
+        32
+      ],
+      "id": "4cea16d6-93f7-439d-a081-12bc01337181",
+      "name": "Send an Email",
+      "webhookId": "b5739f7b-d283-4544-b3dd-7a56ad872b9a",
+      "credentials": {
+        "smtp": {
+          "id": "mip6hWeJiWmBmCaV",
+          "name": "SMTP account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "🤖 CLASIFICAR LEAD CON IA\n\nEnvía el mensaje del lead a Gemini 2.5 Flash y recibe\nun análisis estructurado en JSON.\n\n⚠️ IMPORTANTE: Gemini solo recibe textoParaIA —\nel texto sanitizado sin ningún dato identificable.\nDNI, CBU, email y teléfono reales NUNCA llegan a la API.\n\nEvalúa 3 criterios:\n- Alta: monto específico, producto concreto o urgencia real\n- Media: intento claro sin especificidad\n- Baja: mensaje vago o sin intención de compra\n\nOUTPUT: { prioridad, razon, accion }\n\n⚙️ MODIFICADO EN EJERCICIO 5:\nOn Error → Continue (using error output)\nPin verde → flujo normal → Parsear IA\nPin rojo → flujo error → Edit Fields (ERROR_GEMINI)",
+        "height": 384,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        368
+      ],
+      "id": "84983d33-92c0-4b2a-881f-422b2810a9bf",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "🔧 PARSEAR RESPUESTA DE IA\n\nConvierte el texto JSON que devuelve Gemini en un objeto\nutilizable por los nodos siguientes.\n\nIncluye manejo defensivo de errores: si la IA no responde\nel JSON esperado, asigna valores por defecto para no\nromper el flujo de automatización.\n\nCOMBINA: datosCompletos (datos reales del lead, desde el\nnodo Limpiar) + análisis de IA (prioridad, razon, accion)\n\n⚠️ Referencia: $('Limpiar').first().json.datosCompletos\n(NO el json raíz — los datos reales están en datosCompletos)",
+        "height": 384,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -384
+      ],
+      "id": "fc459eef-2545-42dd-b041-cd2d51b29c5c",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "📧 NOTIFICAR AL EJECUTIVO\n\nEnvía un email automático con el análisis\ncompleto del lead generado por la IA.\n\nAsunto dinámico: incluye prioridad y nombre\ndel lead para identificación rápida en bandeja.\n\nProtocolo: SMTP / Gmail\nVariables: nombre, email, teléfono,\nprioridad, análisis, acción, mensaje original\n\n⚙️ MODIFICADO EN EJERCICIO 5:\nOn Error → Continue (using error output)\nPin verde → flujo normal → Edit Fields2 (GMAIL_ENVIADO)\nPin rojo → flujo error → Edit Fields1 (ERROR_EMAIL)",
+        "height": 304,
+        "width": 368
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        848,
+        -320
+      ],
+      "id": "c7b90a42-aef0-4888-a99d-b2efbee5cd26",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1HZZSNyaDp9-uvXSg8dZwgjioS8taON_8BSsuOCk5H2E",
+          "mode": "list",
+          "cachedResultName": "N8N — Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1HZZSNyaDp9-uvXSg8dZwgjioS8taON_8BSsuOCk5H2E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 839959762,
+          "mode": "list",
+          "cachedResultName": "N8N — Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1HZZSNyaDp9-uvXSg8dZwgjioS8taON_8BSsuOCk5H2E/edit#gid=839959762"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "idempotency_key",
+              "lookupValue": "={{ $json.datosCompletos.idempotency_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1008,
+        16
+      ],
+      "id": "86d7bf98-7b62-4973-bac2-a400517d4d5e",
+      "name": "Get row(s) in sheet",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleApi": {
+          "id": "CSDAcb2u9XMcJD3t",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "81457ef6-bce2-4c05-a7e0-9671f9535334",
+              "leftValue": "={{ Object.keys($json).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -640,
+        160
+      ],
+      "id": "08dd2cfd-d554-4004-b744-1b331e5e2d68",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "const datos = $input.first().json.body || $input.first().json;\n\nconst hoy = new Date();\nconst fecha = hoy.toLocaleDateString('es-AR', {\n  day: '2-digit', month: '2-digit', year: 'numeric',\n  timeZone: 'America/Argentina/Buenos_Aires'\n});\nconst hora = hoy.toLocaleTimeString('es-AR', {\n  hour: '2-digit', minute: '2-digit',\n  timeZone: 'America/Argentina/Buenos_Aires'\n});\n\n// ============================================================\n// HASH — preservado del Ejercicio 3\n// Mismo email + mismo mensaje = misma clave (duplicado)\n// Mismo email + mensaje distinto = clave distinta (lead nuevo)\n// ============================================================\nfunction simpleHash(str) {\n  let hash = 0;\n  for (let i = 0; i < str.length; i++) {\n    const char = str.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return Math.abs(hash).toString(36);\n}\n\nconst mensajeLimpio = (datos.mensaje || '').toLowerCase().trim().substring(0, 200);\nconst idempotency_key = `${(datos.email || 'sin-email').toLowerCase().trim()}_${simpleHash(mensajeLimpio)}`;\n\n// ============================================================\n// FUNCIONES DE ENMASCARAMIENTO DE PII\n// ============================================================\nfunction maskEmail(email) {\n  if (!email || typeof email !== 'string') return '[email-enmascarado]';\n  const [user, domain] = email.split('@');\n  if (!domain) return '[email-enmascarado]';\n  return `${user.substring(0, 2)}***@${domain}`;\n}\n\nfunction maskPhone(phone) {\n  if (!phone || typeof phone !== 'string') return '[tel-enmascarado]';\n  return phone.replace(/\\d(?=\\d{4})/g, '*');\n}\n\nfunction sanitizeText(text) {\n  if (!text || typeof text !== 'string') return '';\n  return text\n    .replace(/\\b\\d{7,8}\\b/g, '[DNI-enmascarado]')\n    .replace(/\\b\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}[\\s-]?\\d{4}\\b/g, '[TARJETA-enmascarada]')\n    .replace(/\\b\\d{22}\\b/g, '[CBU-enmascarado]')\n    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g, '[email-enmascarado]');\n}\n\n// ============================================================\n// DATOS COMPLETOS — se guardan internamente en Sheets\n// ============================================================\nconst datosCompletos = {\n  nombre:   datos.nombre   || 'Sin nombre',\n  email:    datos.email    || 'Sin email',\n  telefono: datos.telefono || 'Sin teléfono',\n  mensaje:  datos.mensaje  || 'Sin mensaje',\n  fecha,\n  hora,\n  fuente: 'webhook-n8n',\n  idempotency_key\n};\n\n// ============================================================\n// DATOS SANITIZADOS — solo esto llega a la IA\n// ============================================================\nconst datosSanitizados = {\n  nombre:   datos.nombre ? datos.nombre.split(' ')[0] : 'Cliente',\n  email:    maskEmail(datos.email),\n  telefono: maskPhone(datos.telefono),\n  mensaje:  sanitizeText(datos.mensaje)\n};\n\n// Texto que recibe la IA — sin ningún PII identificable\nconst textoParaIA = `Nombre: ${datosSanitizados.nombre} | Mensaje: ${datosSanitizados.mensaje}`;\n\n// Log de auditoría\nconst camposSanitizados = [];\nif (datos.email) camposSanitizados.push('email');\nif (datos.telefono) camposSanitizados.push('telefono');\nif (datos.mensaje && /\\d{7,}/.test(datos.mensaje)) camposSanitizados.push('patron-numerico-en-mensaje');\n\nreturn [{\n  json: {\n    datosCompletos,\n    datosSanitizados,\n    textoParaIA,\n    pii_log: camposSanitizados.join(', ') || 'ninguno'\n  }\n}];"
+      },
+      "id": "0000e715-bfc6-4a60-8f68-817dfe36dd2b",
+      "name": "Limpiar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1376,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "content": "🔍 BUSCAR LEAD EN PLANILLA (CONTROL DE DUPLICADOS)\n\nBusca en Google Sheets si ya existe una fila con la misma\nidempotency_key del lead entrante.\n\nCOLUMNA DE BÚSQUEDA: idempotency_key\nVALOR: {{ $json.idempotency_key }}\n\nRESULTADO:\n→ Encuentra fila: lead ya fue procesado → item con datos → IF va a True\n→ No encuentra nada: lead nuevo → item vacío ({}) → IF va a False\n\nCONFIGURACIÓN CLAVE: \"Always Output Data\" activado.\nSin esto, N8N corta el flujo cuando no encuentra resultados\ny los nodos siguientes nunca se ejecutan.",
+        "height": 368,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        -400
+      ],
+      "id": "190cd1c1-61be-4ea6-a619-292393591b9c",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "⚖️ BIFURCACIÓN: ¿ES UN LEAD DUPLICADO?\n\nEvalúa si el Sheets Lookup devolvió datos reales o un item vacío.\n\nCONDICIÓN: Object.keys($json).length > 0\n→ Item con datos (N claves): lead ya existe → TRUE → bloquear\n→ Item vacío (0 claves): lead nuevo → FALSE → procesar\n\nPOR QUÉ Object.keys Y NO $json.idempotency_key:\nChequear un campo específico falla cuando el item está vacío\nporque undefined se evalúa como \"no vacío\" en N8N.\nContar las claves del objeto es más robusto y funciona\naunque el esquema de la planilla cambie.\n\nTRUE → Stop and Error\nFALSE → Gemini (flujo normal)",
+        "height": 384,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        336
+      ],
+      "id": "38c4857e-ab84-4a5e-bede-6c75753084f6",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eb292c9e-a21e-4729-9e9a-ae971504b534",
+              "name": "accion",
+              "value": "ERROR_GEMINI",
+              "type": "string"
+            },
+            {
+              "id": "4a6ba1bb-11a0-4ced-95d8-c78658ec9f02",
+              "name": "resultado",
+              "value": "FAILED",
+              "type": "string"
+            },
+            {
+              "id": "bafb83e9-9944-4899-8272-080c4dfc46be",
+              "name": "=detalle",
+              "value": "={{ $json.error.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1504,
+        944
+      ],
+      "id": "9017d9cf-0aeb-494d-a18f-aea527e5d7ef",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e33c31e1-8df2-48f0-b128-7502cf784263",
+              "name": "accion",
+              "value": "ERROR_EMAIL",
+              "type": "string"
+            },
+            {
+              "id": "0db069c7-a5ce-41f0-9f8c-f1ec2bcac1a4",
+              "name": "resultado",
+              "value": "FAILED",
+              "type": "string"
+            },
+            {
+              "id": "e2612356-176f-4fc0-beaa-c757f4f615ad",
+              "name": "=detalle",
+              "value": "={{ $json.error.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1504,
+        272
+      ],
+      "id": "ed5242ac-3a68-4b7f-b054-5d9d232bbb9c",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a81c5878-cdbc-4217-b856-4fee64650bd6",
+              "name": "accion",
+              "value": "GMAIL_ENVIADO",
+              "type": "string"
+            },
+            {
+              "id": "1bc84453-8a82-4de5-9048-9981680a0eac",
+              "name": "resultado",
+              "value": "SUCCESS",
+              "type": "string"
+            },
+            {
+              "id": "7a631066-b6fa-4e1a-a15e-ca6f38a545a9",
+              "name": "=detalle",
+              "value": "={{ $('Parsear IA').item.json.prioridad }} - {{ $('Parsear IA').item.json.razon }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        16
+      ],
+      "id": "8b4e091f-2a27-41ce-95db-609e3f11e0c6",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1HZZSNyaDp9-uvXSg8dZwgjioS8taON_8BSsuOCk5H2E",
+          "mode": "list",
+          "cachedResultName": "N8N — Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1HZZSNyaDp9-uvXSg8dZwgjioS8taON_8BSsuOCk5H2E/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1105126639,
+          "mode": "list",
+          "cachedResultName": "audit_log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1HZZSNyaDp9-uvXSg8dZwgjioS8taON_8BSsuOCk5H2E/edit#gid=1105126639"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $now }}",
+            "lead_id": "={{ $('Limpiar').item.json.datosCompletos.email }}",
+            "accion": "={{ $json.accion }}",
+            "resultado": "={{ $json.resultado }}",
+            "detalle": "={{ $json.detalle }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "accion",
+              "displayName": "accion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "resultado",
+              "displayName": "resultado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle",
+              "displayName": "detalle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2128,
+        -640
+      ],
+      "id": "b331d385-2fcf-4b21-839a-3fe7c16f3ca9",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "CSDAcb2u9XMcJD3t",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gemini devuelve el texto en content.parts[0].text\nconst respuestaTexto = $input.first().json.content?.parts?.[0]?.text || '';\n\nlet analisis;\ntry {\n  const limpio = respuestaTexto.replace(/```json|```/g, '').trim();\n  analisis = JSON.parse(limpio);\n} catch (e) {\n  analisis = {\n    prioridad: 'Media',\n    razon: 'Análisis automático no disponible — revisar manualmente',\n    accion: 'Contactar al lead en 48hs'\n  };\n}\n\n// Recuperar datos del lead desde el nodo Code de limpieza\nconst datosLead = $('Limpiar').first().json.datosCompletos;\n\nreturn [{\n  json: {\n    ...datosLead,\n    prioridad: analisis.prioridad || 'Media',\n    razon:     analisis.razon     || 'Sin análisis',\n    accion:    analisis.accion    || 'Revisar manualmente'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        144,
+        32
+      ],
+      "id": "c50514ae-cb83-4f0b-a311-943b8925ac60",
+      "name": "Parsear IA"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f4cc27aa-b907-4637-ad59-7738019fbafe",
+              "name": "accion",
+              "value": "DUPLICADO",
+              "type": "string"
+            },
+            {
+              "id": "2bbdb1ee-e24d-4d4a-bafb-42fd17f13118",
+              "name": "resultado",
+              "value": "SKIPPED",
+              "type": "string"
+            },
+            {
+              "id": "499ab9da-4d11-4818-bfe7-f524b48c5e20",
+              "name": "=detalle",
+              "value": "={{ $('Limpiar').item.json.datosCompletos.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        -496
+      ],
+      "id": "95c2c1ae-b7d8-4a5e-a734-8d34971ef19d",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "content": "⚠️ REGISTRAR LEAD DUPLICADO\n\nPrepara los campos estándar para el Audit Log\ncuando se detecta que el lead ya fue procesado.\n\nCAMPOS QUE SETEA:\n→ accion: DUPLICADO\n→ resultado: SKIPPED\n→ detalle: email del lead\n   ($('Limpiar').item.json.datosCompletos.email)\n\nCONTEXTO:\nSe ejecuta cuando el nodo IF detecta que el\nidempotency_key ya existe en Google Sheets.\nEl lead no se procesa ni se envía a la IA.\nQueda registrado en el Audit Log para trazabilidad.\n\nSIGUIENTE NODO: Audit Log (Append row in sheet)",
+        "height": 320,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -864
+      ],
+      "id": "6557aba5-da16-4cdb-bb74-f2c1b182536c",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "✅ REGISTRAR ÉXITO — CAMINO FELIZ\n\nPrepara los campos estándar para el Audit Log\ncuando el flujo completo se ejecutó sin errores.\n\nCAMPOS QUE SETEA:\n→ accion: GMAIL_ENVIADO\n→ resultado: SUCCESS\n→ detalle: prioridad + razón devueltas por Gemini\n   ($('Parsear IA').item.json.prioridad + razon)\n\nCONTEXTO:\nSe ejecuta cuando Send an Email finaliza sin error.\nRepresenta la ejecución exitosa del flujo completo:\nlead nuevo → IA clasificó → mail enviado → log.\n\nSIGUIENTE NODO: Audit Log (Append row in sheet)",
+        "height": 368,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        -400
+      ],
+      "id": "5caa5087-f4a2-4474-acd3-656c94917445",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "❌ REGISTRAR ERROR — FALLO EN ENVÍO DE EMAIL\n\nSe ejecuta cuando Send an Email falla.\nCaptura el mensaje de error para el Audit Log.\n\nCAMPOS QUE SETEA:\n→ accion: ERROR_EMAIL\n→ resultado: FAILED\n→ detalle: $json.error.message\n\nCONTEXTO:\nSend an Email tiene activado \"Continue (using error\noutput)\". Si falla, el flujo no se rompe —\ntoma el pin rojo y deriva acá.\nEl lead quedó guardado en Sheets pero el mail no salió.\n\nSIGUIENTE NODO: Audit Log (Append row in sheet)",
+        "height": 336,
+        "width": 368
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        432
+      ],
+      "id": "3e310711-46ee-4065-97ae-60e9ce2175f8",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "content": "❌ REGISTRAR ERROR — FALLO EN CLASIFICACIÓN IA\n\nSe ejecuta cuando Gemini falla\n(timeout, límite de API, respuesta inválida).\n\nCAMPOS QUE SETEA:\n→ accion: ERROR_GEMINI\n→ resultado: FAILED\n→ detalle: $json.error.message\n\nCONTEXTO:\nGemini tiene activado \"Continue (using error output)\".\nSi falla, el flujo no se rompe —\ntoma el pin rojo y deriva acá.\nEl lead NO quedó guardado ni se envió mail.\n\nSIGUIENTE NODO: Audit Log (Append row in sheet)",
+        "height": 304,
+        "width": 384
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        848
+      ],
+      "id": "5dff8e3c-b76e-427f-88e5-462442d64aed",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "content": "📋 AUDIT LOG — REGISTRO DE TODAS LAS OPERACIONES\n\nEscribe una fila nueva en Google Sheets por cada\nejecución del flujo, sin importar el resultado.\n\nPLANILLA: N8N — Leads\nHOJA: audit_log\nOPERACIÓN: Append row (siempre fila nueva, nunca modifica)\n\nCOLUMNAS:\n→ timestamp: $now (fecha y hora exacta)\n→ lead_id: email real del lead (desde nodo Limpiar)\n→ accion: GMAIL_ENVIADO / DUPLICADO / ERROR_GEMINI / ERROR_EMAIL\n→ resultado: SUCCESS / SKIPPED / FAILED\n→ detalle: razón de Gemini o mensaje de error ($json.detalle)\n\nRECIBE 4 INPUTS:\n→ Edit Fields2 (éxito)\n→ Edit Fields3 (duplicado)\n→ Edit Fields (error Gemini)\n→ Edit Fields1 (error email)\n\nPROPÓSITO:\nTrazabilidad completa del sistema. En banca,\ntodo sistema que toca datos de clientes requiere\nregistro de auditoría para compliance.",
+        "height": 480,
+        "width": 496
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2336,
+        -832
+      ],
+      "id": "6dd08721-86d8-4134-962e-ed66c232e270",
+      "name": "Sticky Note13"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "📥 Webhook — Recibir datos": {
+      "main": [
+        [
+          {
+            "node": "Limpiar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Parsear IA",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Google Sheets — Guardar fila": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an Email": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parsear IA": {
+      "main": [
+        [
+          {
+            "node": "📊 Google Sheets — Guardar fila",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "3e7179d7-deb4-4e0f-a826-ecde9565941c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "feb6b3776cd0670045d202d7747fcec4fad1f6124cf01d9d4ee756e73530cb20"
+  },
+  "id": "xeGvKbSFNcKwsIz8",
+  "tags": []
+}
